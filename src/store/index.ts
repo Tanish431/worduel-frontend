@@ -1,23 +1,31 @@
 import { create } from "zustand";
 import type { User, Guess, MatchStatus, TileResult, ChallengeRequestPayload, RematchRequestPayload} from '../types'
 
+const storedToken = localStorage.getItem('token')
+
 interface AuthSlice {
     user: User | null
     token: string | null
+    authReady: boolean
     setAuth: (user: User, token: string) => void
+    setUser: (user: User) => void
+    setAuthReady: (ready: boolean) => void
     clearAuth: () => void
 }
 
 export const useAuthStore = create<AuthSlice>((set) => ({
     user: null,
-    token: localStorage.getItem('token'),
+    token: storedToken,
+    authReady: !storedToken,
     setAuth: (user, token) => {
         localStorage.setItem('token', token)
-        set({user, token})
+        set({ user, token, authReady: true })
     },
+    setUser: (user) => set((state) => ({ user, authReady: true, token: state.token })),
+    setAuthReady: (authReady) => set({ authReady }),
     clearAuth: () => {
         localStorage.removeItem('token')
-        set({ user:null, token:null })
+        set({ user: null, token: null, authReady: true })
     }
 }))
 

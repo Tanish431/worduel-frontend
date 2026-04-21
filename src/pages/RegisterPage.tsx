@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store'
 
 export function RegisterPage() {
   const navigate = useNavigate()
-  const { setAuth } = useAuthStore()
+  const { user, authReady, setAuth } = useAuthStore()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -26,6 +27,9 @@ export function RegisterPage() {
     }
   }
 
+  if (!authReady) return null
+  if (user) return <Navigate to="/" replace />
+
   return (
     <div className="auth-page">
       <div className="auth-card">
@@ -41,6 +45,10 @@ export function RegisterPage() {
         <button className="btn btn--primary" onClick={submit} disabled={loading}>
           {loading ? 'Creating account…' : 'Register'}
         </button>
+        <div className="auth-card__divider" aria-hidden="true">
+          <span>or</span>
+        </div>
+        <GoogleAuthButton disabled={loading} label="Sign up with Google" />
         <p className="auth-card__footer">
           Have an account? <Link to="/login">Log in</Link>
         </p>

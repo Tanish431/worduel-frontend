@@ -66,16 +66,15 @@ export function useGame(matchId: string, isPlayerA: boolean) {
         else if (/^[a-zA-Z]$/.test(key)) addLetter(key)
     }, [status, submitGuess, deleteLetter, addLetter])
 
-    const letterStates = myGuesses.reduce<Record<string, string>>((acc, guess) => {
-        guess.result.forEach((r, i) => {
-          const letter = guess.guess[i]
-          if (acc[letter] === 'correct') return
-          if (r === 'correct' || (r === 'present' && acc[letter] !== 'correct') || !acc[letter]) {
-            acc[letter] = r ?? 'absent'
-          }
+    const letterStates = [...myGuesses.map((guess) => guess.guess), currentInput].reduce<Record<string, string>>(
+      (acc, word) => {
+        word.split("").forEach((letter) => {
+          acc[letter.toUpperCase()] = "used"
         })
         return acc
-    }, {})
+      },
+      {}
+    )
 
     return {
       currentInput,

@@ -5,10 +5,11 @@ import { useAuthStore } from '../store'
 import { PrivateMatchModal } from '../components/ui/PrivateMatchModal'
 
 export function HomePage() {
-    const { user, clearAuth } = useAuthStore()
+    const { user, authReady, clearAuth } = useAuthStore()
     const { joinQueue, leaveQueue, isQueuing } = useMatchmaking()
     const [showPrivate, setShowPrivate] = useState(false)
 
+    if (!authReady) return null
     if (!user) return <Navigate to="/login" replace />
 
     return (

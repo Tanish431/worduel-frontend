@@ -1,6 +1,7 @@
 import type { User, Match, Guess, LeaderboardEntry, MatchSummary } from '../types'
 
 const BASE = '/api'
+const GOOGLE_CALLBACK_PATH = '/auth/google/callback'
 
 function authHeader(): HeadersInit {
     const token = localStorage.getItem('token')
@@ -24,6 +25,11 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
+    getGoogleAuthUrl: () => {
+        const redirectUri = `${window.location.origin}${GOOGLE_CALLBACK_PATH}`
+        return `${BASE}/auth/google?redirect_uri=${encodeURIComponent(redirectUri)}`
+    },
+
     register: (username: string, email: string, password: string) =>
         request<{ token: string; user: User}> ('/auth/register', {
             method: 'POST',
@@ -34,6 +40,11 @@ export const api = {
         request<{ token: string; user: User}> ('/auth/login', {
             method: 'POST',
             body: JSON.stringify({email, password})
+        }),
+
+    getMeWithToken: (token: string) =>
+        request<User>('/me', {
+            headers: { Authorization: `Bearer ${token}` },
         }),
     
     getMe: () => request<User>('/me'),

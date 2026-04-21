@@ -19,12 +19,13 @@ const MAX_HP = 100;
 
 export function GamePage() {
     const { matchId } = useParams<{ matchId: string }>();
-    const { user } = useAuthStore();
+    const { user, authReady } = useAuthStore();
     const { resetGame, opponentForfeited, isRanked, rematchDeclined, setRematchDeclined } =
         useGameStore();
     const navigate = useNavigate();
     const location = useLocation();
     const [rematchSent, setRematchSent] = useState(false);
+    const [challengeSent, setChallengeSent] = useState(false);
     const [isForfeiting, setIsForfeiting] = useState(false);
     const [summary, setSummary] = useState<MatchSummary | null>(null);
     const [summaryLoading, setSummaryLoading] = useState(false);
@@ -82,6 +83,8 @@ export function GamePage() {
 
     useEffect(() => {
         setRematchSent(false);
+        setChallengeSent(false);
+        setIsForfeiting(false);
         setSummary(null);
         setSummaryLoading(false);
     }, [matchId]);
@@ -121,6 +124,7 @@ export function GamePage() {
         };
     }, [isFinished, matchId]);
 
+    if (!authReady) return null;
     if (!user || !matchId) return <Navigate to="/" replace />;
 
     const handleForfeit = async () => {
@@ -140,6 +144,15 @@ export function GamePage() {
         try {
             await api.requestRematch(matchId);
             setRematchSent(true);
+        } catch (err: any) {
+            console.error(err);
+        }
+    };
+
+    const handleChallenge = async (opponentUsername: string) => {
+        try {
+            await api.challengeUser(opponentUsername);
+            setChallengeSent(true);
         } catch (err: any) {
             console.error(err);
         }
@@ -191,7 +204,9 @@ export function GamePage() {
                     isWinner={!!isWinner}
                     isRanked={routeIsRanked === false ? false : isRanked}
                     rematchSent={rematchSent}
+                    challengeSent={challengeSent}
                     onRematch={handleRematch}
+                    onChallenge={handleChallenge}
                     onBackToLobby={() => {
                         resetGame();
                         navigate("/");

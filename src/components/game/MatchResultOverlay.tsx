@@ -6,10 +6,40 @@ interface MatchResultOverlayProps {
     isWinner: boolean;
     isRanked: boolean;
     rematchSent: boolean;
+    challengeSent: boolean;
     onRematch: () => void;
+    onChallenge: (opponentUsername: string) => void;
     onBackToLobby: () => void;
     summary: MatchSummary | null;
     summaryLoading: boolean;
+}
+
+function ChallengeConfirmModal({
+    onConfirm,
+    onCancel,
+}: {
+    onConfirm: () => void;
+    onCancel: () => void;
+}) {
+    return (
+        <div className="challenge-modal-overlay">
+            <div className="challenge-modal">
+                <h3 className="challenge-modal__title">Send Challenge?</h3>
+                <p className="challenge-modal__message">
+                    Challenges are <strong>unranked</strong> matches against this opponent. 
+                    They can accept or decline your challenge.
+                </p>
+                <div className="challenge-modal__actions">
+                    <button className="btn btn--primary btn--sm" onClick={onConfirm}>
+                        Send Challenge
+                    </button>
+                    <button className="btn btn--ghost btn--sm" onClick={onCancel}>
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function GuessChip({ guess }: { guess: Guess }) {
@@ -32,13 +62,21 @@ export function MatchResultOverlay({
     isWinner,
     isRanked,
     rematchSent,
+    challengeSent,
     onRematch,
+    onChallenge,
     onBackToLobby,
     summary,
     summaryLoading,
 }: MatchResultOverlayProps) {
     const rounds = summary?.rounds ?? [];
     const [activeRound, setActiveRound] = useState(0);
+    const [showChallengeModal, setShowChallengeModal] = useState(false);
+    
+    // Get opponent username
+    const opponentUsername = currentUserId === summary?.player_a.id 
+        ? summary?.player_b.username 
+        : summary?.player_a.username;
 
     useEffect(() => {
         setActiveRound(0);
@@ -145,18 +183,40 @@ export function MatchResultOverlay({
                 </div>
 
                 <div className="result-overlay__actions">
-                    {!isRanked &&
-                        (rematchSent ? (
-                            <p className="result-overlay__waiting">Waiting for rematch…</p>
+                    {isRanked ? (
+                        challengeSent ? (
+                            <p className="result-overlay__waiting">Waiting for challenge…</p>
                         ) : (
+                            <button className="btn btn--primary btn--sm" onClick={() => setShowChallengeModal(true)}>
+                                Challenge
+                            </button>
+                        )
+                    ) : (
+                        !rematchSent && (
                             <button className="btn btn--primary btn--sm" onClick={onRematch}>
                                 Rematch
                             </button>
-                        ))}
+                        )
+                    )}
+                    {isRanked && rematchSent && (
+                        <p className="result-overlay__waiting">Waiting for rematch…</p>
+                    )}
                     <button className="btn btn--ghost btn--sm" onClick={onBackToLobby}>
                         Back to lobby
                     </button>
                 </div>
+
+                {showChallengeModal && (
+                    <ChallengeConfirmModal
+                        onConfirm={() => {
+                            setShowChallengeModal(false);
+                            if (opponentUsername) {
+                                onChallenge(opponentUsername);
+                            }
+                        }}
+                        onCancel={() => setShowChallengeModal(false)}
+                    />
+                )}
             </div>
         </div>
     );
