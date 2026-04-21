@@ -10,6 +10,7 @@ function authHeader(): HeadersInit {
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const res = await fetch(`${BASE}${path}`, {
+        credentials: 'include',
         ...init,
         headers: {
             'Content-Type': 'application/json',
@@ -58,14 +59,16 @@ export const api = {
     getMe: () => request<User>('/me'),
 
     joinQueue: () =>
-        fetch('/api/match/queue', {
+        fetch(`${BASE}/match/queue`, {
             method: 'POST',
+            credentials: 'include',
             headers: { ...authHeader() },
         }).then((res) => { if (!res.ok) throw new Error(res.statusText) }),
 
     leaveQueue: () =>
-        fetch('/api/match/queue', {
+        fetch(`${BASE}/match/queue`, {
             method: 'DELETE',
+            credentials: 'include',
             headers: { ...authHeader() },
         }).then((res) => { if (!res.ok) throw new Error(res.statusText) }),
     getMatch: (matchId: string) => request<Match>(`/match/${matchId}`),
@@ -80,6 +83,7 @@ export const api = {
     forfeitMatch: (matchId: string) =>
         fetch(`${BASE}/match/${matchId}/forfeit`, {
             method: 'POST',
+            credentials: 'include',
             headers: { ...authHeader() },
         }).then((res) => { if (!res.ok) throw new Error(res.statusText) }),
 
