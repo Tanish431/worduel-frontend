@@ -28,6 +28,7 @@ export function useWebSocket(matchId: string | null, isPlayerA: boolean) {
 		setOpponentForfeited,
 		setIsRanked,
 		setPendingChallenge,
+		setChallengeDeclined,
 		setPendingRematch,
 		setRematchDeclined,
 	} = useGameStore()
@@ -89,6 +90,8 @@ export function useWebSocket(matchId: string | null, isPlayerA: boolean) {
 		const onChallengeRequest = (e: WSEvent) =>
 			setPendingChallenge(e.payload as ChallengeRequestPayload)
 
+		const onChallengeDeclined = (_e: WSEvent) => setChallengeDeclined(true)
+
 		const onRematchRequest = (e: WSEvent) =>
 			setPendingRematch(e.payload as RematchRequestPayload)
 
@@ -103,6 +106,7 @@ export function useWebSocket(matchId: string | null, isPlayerA: boolean) {
 		wsClient.on('guess_reset', onGuessReset)
 		wsClient.on('opponent_left', onOpponentLeft)
 		wsClient.on('challenge_request', onChallengeRequest)
+		wsClient.on('challenge_declined', onChallengeDeclined)
 		wsClient.on('rematch_request', onRematchRequest)
 		wsClient.on('rematch_declined', onRematchDeclined)
 
@@ -116,9 +120,10 @@ export function useWebSocket(matchId: string | null, isPlayerA: boolean) {
 			wsClient.off('guess_reset', onGuessReset)
 			wsClient.off('opponent_left', onOpponentLeft)
 			wsClient.off('challenge_request', onChallengeRequest)
+			wsClient.off('challenge_declined', onChallengeDeclined)
 			wsClient.off('rematch_request', onRematchRequest)
 			wsClient.off('rematch_declined', onRematchDeclined)
 			wsClient.disconnect()
 		}
-	}, [addGuess, addOpponentResult, isPlayerA, matchId, navigate, setHP, setIsRanked, setOpponentForfeited, setPendingChallenge, setPendingRematch, setRematchDeclined, setWinner, startMatch, user])
+	}, [addGuess, addOpponentResult, isPlayerA, matchId, navigate, setChallengeDeclined, setHP, setIsRanked, setOpponentForfeited, setPendingChallenge, setPendingRematch, setRematchDeclined, setWinner, startMatch, user])
 }

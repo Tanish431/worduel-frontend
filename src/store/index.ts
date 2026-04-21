@@ -42,6 +42,7 @@ interface GameSlice {
     opponentForfeited: boolean
     isRanked: boolean
     pendingChallenge: ChallengeRequestPayload | null
+    challengeDeclined: boolean
     pendingRematch: RematchRequestPayload | null
     rematchDeclined: boolean
     setMatchId: (id: string) => void
@@ -56,6 +57,7 @@ interface GameSlice {
     setOpponentForfeited: (v: boolean) => void
     setIsRanked: (v: boolean) => void
     setPendingChallenge: (c: ChallengeRequestPayload | null) => void
+    setChallengeDeclined: (v: boolean) => void
     setPendingRematch: (r: RematchRequestPayload | null) => void
     setRematchDeclined: (v: boolean) => void
     resetGame: () => void
@@ -72,6 +74,7 @@ export const useGameStore = create<GameSlice>((set) => ({
   opponentForfeited: false,
   isRanked: true,
   pendingChallenge: null,
+  challengeDeclined: false,
   pendingRematch: null,
   rematchDeclined: false,
   setMatchId: (id) => set({ matchId: id }),
@@ -98,6 +101,7 @@ export const useGameStore = create<GameSlice>((set) => ({
   setOpponentForfeited: (v) => set({ opponentForfeited: v }),
   setIsRanked: (v) => set({ isRanked: v }),
   setPendingChallenge: (c) => set({ pendingChallenge: c }),
+  setChallengeDeclined: (v) => set({ challengeDeclined: v }),
   setPendingRematch: (r) => set({ pendingRematch: r }),
   setRematchDeclined: (v) => set({ rematchDeclined: v }),
   resetGame: () => set({
@@ -111,6 +115,7 @@ export const useGameStore = create<GameSlice>((set) => ({
     opponentForfeited: false,
     isRanked: true,
     pendingChallenge: null,
+    challengeDeclined: false,
     pendingRematch: null,
     rematchDeclined: false,
   }),

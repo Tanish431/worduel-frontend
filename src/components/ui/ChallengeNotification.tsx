@@ -8,9 +8,11 @@ export function ChallengeNotification() {
     const navigate = useNavigate();
     const {
         pendingChallenge,
+        challengeDeclined,
         pendingRematch,
         rematchDeclined,
         setPendingChallenge,
+        setChallengeDeclined,
         setPendingRematch,
         setRematchDeclined,
         startMatch,
@@ -88,7 +90,7 @@ export function ChallengeNotification() {
         }
     };
 
-    if (!pendingChallenge && !pendingRematch && !rematchDeclined) return null;
+    if (!pendingChallenge && !challengeDeclined && !pendingRematch && !rematchDeclined) return null;
 
     return (
         <div className="notification">
@@ -134,6 +136,20 @@ export function ChallengeNotification() {
                             Decline
                         </button>
                     </div>
+                </>
+            )}
+
+            {challengeDeclined && !pendingChallenge && (
+                <>
+                    <p className="notification__text">
+                        Opponent declined the challenge.
+                    </p>
+                    <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={() => setChallengeDeclined(false)}
+                    >
+                        Dismiss
+                    </button>
                 </>
             )}
 

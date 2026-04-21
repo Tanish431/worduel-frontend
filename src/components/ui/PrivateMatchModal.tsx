@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../lib/api'
 import { wsClient } from '../../lib/ws'
@@ -15,7 +15,7 @@ type Tab = 'create' | 'join' | 'challenge'
 
 export function PrivateMatchModal({ onClose }: Props) {
   const navigate = useNavigate()
-  const { startMatch } = useGameStore()
+  const { startMatch, challengeDeclined, setChallengeDeclined } = useGameStore()
   const [tab, setTab] = useState<Tab>('create')
   const [code, setCode] = useState('')
   const [joinCode, setJoinCode] = useState('')
@@ -24,6 +24,15 @@ export function PrivateMatchModal({ onClose }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [waiting, setWaiting] = useState(false)
   const [challengeSent, setChallengeSent] = useState(false)
+
+  useEffect(() => {
+    if (!challengeDeclined) return
+    wsClient.disconnect()
+    setChallengeSent(false)
+    setLoading(false)
+    setError('Challenge was declined.')
+    setChallengeDeclined(false)
+  }, [challengeDeclined, setChallengeDeclined])
 
   const listenForMatch = () => {
     wsClient.connect(LOBBY_ID)
@@ -71,6 +80,7 @@ export function PrivateMatchModal({ onClose }: Props) {
     if (!username.trim()) return
     setLoading(true)
     setError(null)
+    setChallengeDeclined(false)
     try {
       listenForMatch()
       await api.challengeUser(username.trim())

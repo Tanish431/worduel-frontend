@@ -20,7 +20,7 @@ const MAX_HP = 100;
 export function GamePage() {
     const { matchId } = useParams<{ matchId: string }>();
     const { user, authReady } = useAuthStore();
-    const { resetGame, opponentForfeited, isRanked, rematchDeclined, setRematchDeclined } =
+    const { resetGame, opponentForfeited, isRanked, challengeDeclined, rematchDeclined, setChallengeDeclined, setRematchDeclined } =
         useGameStore();
     const navigate = useNavigate();
     const location = useLocation();
@@ -95,6 +95,12 @@ export function GamePage() {
         setRematchDeclined(false);
     }, [rematchDeclined, setRematchDeclined]);
 
+    useEffect(() => {
+        if (!challengeDeclined) return;
+        setChallengeSent(false);
+        setChallengeDeclined(false);
+    }, [challengeDeclined, setChallengeDeclined]);
+
     const isFinished = status === "finished";
     const isWinner = winnerId === user?.id;
 
@@ -151,6 +157,7 @@ export function GamePage() {
 
     const handleChallenge = async (opponentUsername: string) => {
         try {
+            setChallengeDeclined(false);
             await api.challengeUser(opponentUsername);
             setChallengeSent(true);
         } catch (err: any) {

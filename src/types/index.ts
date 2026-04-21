@@ -99,6 +99,10 @@ export interface ChallengeRequestPayload {
   challenger_username: string
 }
 
+export interface ChallengeDeclinedPayload {
+  message: string
+}
+
 export interface RematchRequestPayload {
   match_id: string
   requester_id: string

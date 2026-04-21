@@ -18,6 +18,7 @@ export function useMatchmaking() {
         startMatch,
         setStatus,
         setPendingChallenge,
+        setChallengeDeclined,
         status,
     } = useGameStore()
 
@@ -37,13 +38,19 @@ export function useMatchmaking() {
             setPendingChallenge(e.payload as ChallengeRequestPayload)
         }
 
+        const onChallengeDeclined = (_e: WSEvent) => {
+            setChallengeDeclined(true)
+        }
+
         wsClient.on('match_found', onMatchFound)
         wsClient.on('challenge_request', onChallengeRequest)
+        wsClient.on('challenge_declined', onChallengeDeclined)
         return () => {
             wsClient.off('match_found', onMatchFound)
             wsClient.off('challenge_request', onChallengeRequest)
+            wsClient.off('challenge_declined', onChallengeDeclined)
         }
-    }, [navigate, setPendingChallenge, setStatus, startMatch, user])
+    }, [navigate, setChallengeDeclined, setPendingChallenge, setStatus, startMatch, user])
 
     const joinQueue = useCallback(async () => {
         setStatus('queuing')
