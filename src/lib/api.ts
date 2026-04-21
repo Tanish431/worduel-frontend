@@ -1,6 +1,6 @@
 import type { User, Match, Guess, LeaderboardEntry, MatchSummary } from '../types'
 
-const BASE = '/api'
+const BASE = import.meta.env.VITE_API_URL ?? '/api'
 const GOOGLE_CALLBACK_PATH = '/auth/google/callback'
 
 function authHeader(): HeadersInit {

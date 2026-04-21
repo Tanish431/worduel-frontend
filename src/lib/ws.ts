@@ -38,12 +38,8 @@ class WSClient {
     private open() {
         if (!this.matchId) return
         const token = localStorage.getItem('token') ?? ''
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const configuredBase = import.meta.env.VITE_WS_BASE_URL?.trim()
-        const defaultBase = `${protocol}//${window.location.hostname}:8080`
-        const wsBase = configuredBase || defaultBase
-        const wsUrl = `${wsBase}/ws?token=${token}&match_id=${this.matchId}`
-        this.socket = new WebSocket(wsUrl)
+        const base = import.meta.env.VITE_WS_URL ?? `ws://${window.location.host}`
+        this.socket = new WebSocket(`${base}/ws?token=${token}&match_id=${this.matchId}`)
 
         this.socket.onmessage = (e) => {
             try {
