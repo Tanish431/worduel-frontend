@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { wsClient } from '../lib/ws'
@@ -10,6 +10,7 @@ import type {
 } from '../types'
 
 const LOBBY_ID = '00000000-0000-0000-0000-000000000000'
+const QUEUE_TIMEOUT_MS = 90_000
 
 export function useMatchmaking() {
     const navigate = useNavigate()
@@ -17,10 +18,20 @@ export function useMatchmaking() {
     const {
         startMatch,
         setStatus,
+        setOpponentUsername,
         setPendingChallenge,
         setChallengeDeclined,
+        selectedMode,
         status,
     } = useGameStore()
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    const clearTimer = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current)
+            timerRef.current = null
+        }
+    }
 
     useEffect(() => {
         if (!user) return
@@ -28,9 +39,12 @@ export function useMatchmaking() {
         wsClient.connect(LOBBY_ID)
 
         const onMatchFound = (e: WSEvent) => {
+            clearTimer()
             const p = e.payload as MatchFoundPayload
             startMatch(p.match_id, true)
-            wsClient.disconnect()
+            setStatus('active')
+            setOpponentUsername(p.opponent_username)
+            wsClient.off('match_found', onMatchFound)
             navigate(`/game/${p.match_id}`, { state: { isPlayerA: p.is_player_a, isRanked: true } })
         }
 
@@ -55,17 +69,24 @@ export function useMatchmaking() {
     const joinQueue = useCallback(async () => {
         setStatus('queuing')
         try {
-            await api.joinQueue()
+            await api.joinQueue(selectedMode)
+            timerRef.current = setTimeout(async () => {
+                setStatus('timeout')
+                try { await api.leaveQueue() } catch { }
+                wsClient.disconnect()
+            }, QUEUE_TIMEOUT_MS)
         } catch (err) {
             setStatus('idle')
             throw err
         }
+    }, [selectedMode])
+
+    const leaveQueue = useCallback(async () => {
+        clearTimer()
+        setStatus('idle')
+        try { await api.leaveQueue() } catch { }
+        wsClient.disconnect()
     }, [])
 
-    const leaveQueue = useCallback( async () => {
-        setStatus('idle')
-        try { await api.leaveQueue() } catch {}
-    },[])
-
-    return {joinQueue, leaveQueue, isQueuing: status === 'queuing'}
+    return { joinQueue, leaveQueue, isQueuing: status === 'queuing', timedOut: status === 'timeout' }
 }

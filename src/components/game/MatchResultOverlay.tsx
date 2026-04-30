@@ -3,6 +3,7 @@ import type { Guess, MatchSummary } from "../../types";
 
 interface MatchResultOverlayProps {
     currentUserId: string;
+    isDraw: boolean;
     isWinner: boolean;
     isRanked: boolean;
     rematchSent: boolean;
@@ -12,6 +13,7 @@ interface MatchResultOverlayProps {
     onBackToLobby: () => void;
     summary: MatchSummary | null;
     summaryLoading: boolean;
+    isHistoryView?: boolean;
 }
 
 function ChallengeConfirmModal({
@@ -26,14 +28,20 @@ function ChallengeConfirmModal({
             <div className="challenge-modal">
                 <h3 className="challenge-modal__title">Send Challenge?</h3>
                 <p className="challenge-modal__message">
-                    Challenges are <strong>unranked</strong> matches against this opponent. 
-                    They can accept or decline your challenge.
+                    Challenges are <strong>unranked</strong> matches against
+                    this opponent. They can accept or decline your challenge.
                 </p>
                 <div className="challenge-modal__actions">
-                    <button className="btn btn--primary btn--sm" onClick={onConfirm}>
+                    <button
+                        className="btn btn--primary btn--sm"
+                        onClick={onConfirm}
+                    >
                         Send Challenge
                     </button>
-                    <button className="btn btn--ghost btn--sm" onClick={onCancel}>
+                    <button
+                        className="btn btn--ghost btn--sm"
+                        onClick={onCancel}
+                    >
                         Cancel
                     </button>
                 </div>
@@ -59,6 +67,7 @@ function GuessChip({ guess }: { guess: Guess }) {
 
 export function MatchResultOverlay({
     currentUserId,
+    isDraw,
     isWinner,
     isRanked,
     rematchSent,
@@ -68,15 +77,17 @@ export function MatchResultOverlay({
     onBackToLobby,
     summary,
     summaryLoading,
+    isHistoryView,
 }: MatchResultOverlayProps) {
     const rounds = summary?.rounds ?? [];
     const [activeRound, setActiveRound] = useState(0);
     const [showChallengeModal, setShowChallengeModal] = useState(false);
-    
+
     // Get opponent username
-    const opponentUsername = currentUserId === summary?.player_a.id 
-        ? summary?.player_b.username 
-        : summary?.player_a.username;
+    const opponentUsername =
+        currentUserId === summary?.player_a.id
+            ? summary?.player_b.username
+            : summary?.player_a.username;
 
     useEffect(() => {
         setActiveRound(0);
@@ -98,27 +109,46 @@ export function MatchResultOverlay({
         currentRound.player_a_guesses.length === 0 &&
         currentRound.player_b_guesses.length === 0;
     const playerALabel =
-        summary?.player_a.id === currentUserId ? "You" : (summary?.player_a.username ?? "Player A");
+        summary?.player_a.id === currentUserId
+            ? "You"
+            : (summary?.player_a.username ?? "Player A");
     const playerBLabel =
-        summary?.player_b.id === currentUserId ? "You" : (summary?.player_b.username ?? "Player B");
+        summary?.player_b.id === currentUserId
+            ? "You"
+            : (summary?.player_b.username ?? "Player B");
 
     return (
-        <div className="result-overlay">
-            <div className="result-overlay__backdrop" />
+        <div className={`result-overlay ${isHistoryView ? 'result-overlay--history' : ''}`}>
+            {!isHistoryView && <div className="result-overlay__backdrop" />}
             <div className="result-overlay__card">
-                <div
-                    className={`result-overlay__status result-overlay__status--${isWinner ? "win" : "lose"}`}
-                >
-                    {isWinner ? "Victory" : "Defeat"}
-                </div>
+                {isDraw ? (
+                    <>
+                        <div className="result-overlay__status result-overlay__status--draw">
+                            Draw
+                        </div>
+                        <p className="result-overlay__headline">It's a tie!</p>
+                    </>
+                ) : (
+                    <>
+                        <div
+                            className={`result-overlay__status result-overlay__status--${isWinner ? "win" : "lose"}`}
+                        >
+                            {isWinner ? "Victory" : "Defeat"}
+                        </div>
 
-                <p className="result-overlay__headline">
-                    {isWinner ? "You won the duel." : "You lost the duel."}
-                </p>
+                        <p className="result-overlay__headline">
+                            {isWinner
+                                ? "You won the duel."
+                                : "You lost the duel."}
+                        </p>
+                    </>
+                )}
 
                 <div className="result-overlay__summary">
                     {summaryLoading ? (
-                        <p className="result-overlay__empty">Loading match summary…</p>
+                        <p className="result-overlay__empty">
+                            Loading match summary…
+                        </p>
                     ) : !currentRound ? (
                         <p className="result-overlay__empty">
                             Match summary will appear here after the final word.
@@ -127,7 +157,9 @@ export function MatchResultOverlay({
                         <>
                             <div className="result-overlay__round-header">
                                 <span className="result-overlay__round-label">
-                                    {isUpcomingRound ? "Up Next" : `Word ${activeRound + 1}`}
+                                    {isUpcomingRound
+                                        ? "Up Next"
+                                        : `Word ${activeRound + 1}`}
                                 </span>
                                 <span className="result-overlay__target">
                                     {currentRound.target_word.toUpperCase()}
@@ -140,12 +172,20 @@ export function MatchResultOverlay({
                                         {playerALabel}
                                     </div>
                                     <div className="result-overlay__guess-list">
-                                        {currentRound.player_a_guesses.length > 0 ? (
-                                            currentRound.player_a_guesses.map((guess) => (
-                                                <GuessChip key={guess.id} guess={guess} />
-                                            ))
+                                        {currentRound.player_a_guesses.length >
+                                        0 ? (
+                                            currentRound.player_a_guesses.map(
+                                                (guess) => (
+                                                    <GuessChip
+                                                        key={guess.id}
+                                                        guess={guess}
+                                                    />
+                                                ),
+                                            )
                                         ) : (
-                                            <p className="result-overlay__guess-empty">No guesses</p>
+                                            <p className="result-overlay__guess-empty">
+                                                No guesses
+                                            </p>
                                         )}
                                     </div>
                                 </div>
@@ -155,12 +195,20 @@ export function MatchResultOverlay({
                                         {playerBLabel}
                                     </div>
                                     <div className="result-overlay__guess-list">
-                                        {currentRound.player_b_guesses.length > 0 ? (
-                                            currentRound.player_b_guesses.map((guess) => (
-                                                <GuessChip key={guess.id} guess={guess} />
-                                            ))
+                                        {currentRound.player_b_guesses.length >
+                                        0 ? (
+                                            currentRound.player_b_guesses.map(
+                                                (guess) => (
+                                                    <GuessChip
+                                                        key={guess.id}
+                                                        guess={guess}
+                                                    />
+                                                ),
+                                            )
                                         ) : (
-                                            <p className="result-overlay__guess-empty">No guesses</p>
+                                            <p className="result-overlay__guess-empty">
+                                                No guesses
+                                            </p>
                                         )}
                                     </div>
                                 </div>
@@ -172,7 +220,9 @@ export function MatchResultOverlay({
                                         <button
                                             key={round.word_index}
                                             className={`result-overlay__dot ${index === activeRound ? "result-overlay__dot--active" : ""}`}
-                                            onClick={() => setActiveRound(index)}
+                                            onClick={() =>
+                                                setActiveRound(index)
+                                            }
                                             aria-label={`Show round ${round.word_index + 1}`}
                                         />
                                     ))}
@@ -181,30 +231,49 @@ export function MatchResultOverlay({
                         </>
                     )}
                 </div>
-
-                <div className="result-overlay__actions">
-                    {isRanked ? (
-                        challengeSent ? (
-                            <p className="result-overlay__waiting">Waiting for challenge…</p>
-                        ) : (
-                            <button className="btn btn--primary btn--sm" onClick={() => setShowChallengeModal(true)}>
-                                Challenge
+                {!isHistoryView && (
+                    <div className="result-overlay__actions">
+                        <div className="result-overlay__actions">
+                            {isRanked ? (
+                                challengeSent ? (
+                                    <p className="result-overlay__waiting">
+                                        Waiting for challenge…
+                                    </p>
+                                ) : (
+                                    <button
+                                        className="btn btn--primary btn--sm"
+                                        onClick={() =>
+                                            setShowChallengeModal(true)
+                                        }
+                                    >
+                                        Challenge
+                                    </button>
+                                )
+                            ) : (
+                                <button
+                                    className="btn btn--primary btn--sm"
+                                    onClick={onRematch}
+                                    disabled={rematchSent}
+                                >
+                                    {rematchSent
+                                        ? "Waiting for rematch…"
+                                        : "Rematch"}
+                                </button>
+                            )}
+                            {isRanked && rematchSent && (
+                                <p className="result-overlay__waiting">
+                                    Waiting for rematch…
+                                </p>
+                            )}
+                            <button
+                                className="btn btn--ghost btn--sm"
+                                onClick={onBackToLobby}
+                            >
+                                Back to lobby
                             </button>
-                        )
-                    ) : (
-                        !rematchSent && (
-                            <button className="btn btn--primary btn--sm" onClick={onRematch}>
-                                Rematch
-                            </button>
-                        )
-                    )}
-                    {isRanked && rematchSent && (
-                        <p className="result-overlay__waiting">Waiting for rematch…</p>
-                    )}
-                    <button className="btn btn--ghost btn--sm" onClick={onBackToLobby}>
-                        Back to lobby
-                    </button>
-                </div>
+                        </div>
+                    </div>
+                )}
 
                 {showChallengeModal && (
                     <ChallengeConfirmModal

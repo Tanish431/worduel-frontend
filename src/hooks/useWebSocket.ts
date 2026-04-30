@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { wsClient } from '../lib/ws'
 import { useGameStore, useAuthStore } from '../store'
 import type {
@@ -18,15 +17,15 @@ interface HPUpdatePayload {
 }
 
 export function useWebSocket(matchId: string | null, isPlayerA: boolean) {
-	const navigate = useNavigate()
 	const {
-		startMatch,
 		addGuess,
 		addOpponentResult,
+		resetMyBoard,
 		setWinner,
 		setHP,
 		setOpponentForfeited,
 		setIsRanked,
+		setOpponentUsername,
 		setPendingChallenge,
 		setChallengeDeclined,
 		setPendingRematch,
@@ -41,15 +40,17 @@ export function useWebSocket(matchId: string | null, isPlayerA: boolean) {
 
 		const onMatchFound = (e: WSEvent) => {
 			const p = e.payload as MatchFoundPayload
-			startMatch(p.match_id, false)
-			wsClient.off('match_found', onMatchFound)
-			wsClient.disconnect()
-			navigate(`/game/${p.match_id}`, { state: { isPlayerA: p.is_player_a, isRanked: false }, replace: true })
+			setOpponentUsername(p.opponent_username)
+			setIsRanked(false)
 		}
 
 		const onGuessResult = (e: WSEvent) => {
-			const guess = e.payload as Guess
-			if (guess.player_id === user.id) addGuess(guess)
+			const guess = e.payload as Guess & { reset?: boolean }
+			if (guess.player_id === user.id) {
+				if (!guess.reset) {
+					addGuess(guess)
+				}
+			}
 		}
 
 		const onOpponentGuess = (e: WSEvent) =>
@@ -69,17 +70,24 @@ export function useWebSocket(matchId: string | null, isPlayerA: boolean) {
 		}
 
 		const onWordSolved = (e: WSEvent) => {
-			const payload = e.payload as { player_id?: string }
+			const payload = e.payload as { player_id?: string, reset?: boolean }
 			if (payload.player_id === user.id) {
-				useGameStore.setState({ myGuesses: [] })
+				if (payload.reset) {
+					return
+				}
+				resetMyBoard()
 				return
 			}
 			useGameStore.setState({ opponentResults: [] })
 		}
 
 		const onGuessReset = (e: WSEvent) => {
-			const p = e.payload as { reset: boolean }
-			if (p.reset) useGameStore.setState({ myGuesses: [] })
+			const p = e.payload as { reset: boolean, my_hp: number; next_word_index: number }
+			if (p.reset) {
+				window.setTimeout(() => {
+					resetMyBoard()
+				}, 560)
+			}
 		}
 
 		const onOpponentLeft = () => {
@@ -123,7 +131,7 @@ export function useWebSocket(matchId: string | null, isPlayerA: boolean) {
 			wsClient.off('challenge_declined', onChallengeDeclined)
 			wsClient.off('rematch_request', onRematchRequest)
 			wsClient.off('rematch_declined', onRematchDeclined)
-			wsClient.disconnect()
+			wsClient.disconnectIfMatch(matchId)
 		}
-	}, [addGuess, addOpponentResult, isPlayerA, matchId, navigate, setChallengeDeclined, setHP, setIsRanked, setOpponentForfeited, setPendingChallenge, setPendingRematch, setRematchDeclined, setWinner, startMatch, user])
+	}, [addGuess, addOpponentResult, isPlayerA, matchId, resetMyBoard, setChallengeDeclined, setHP, setIsRanked, setOpponentForfeited, setOpponentUsername, setPendingChallenge, setPendingRematch, setRematchDeclined, setWinner, user])
 }

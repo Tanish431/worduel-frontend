@@ -4,6 +4,7 @@ export interface User {
     id: string
     username: string
     elo: number
+    is_guest: boolean
     created_at: string
 }
 
@@ -14,7 +15,12 @@ export interface Match {
     player_a_id: string
     player_b_id: string
     status: MatchStatus
+    player_a_hp: number
+    player_b_hp: number
+    player_a_word_idx: number
+    player_b_word_idx: number
     is_ranked: boolean
+    game_mode: string
     winner_id?: string
     started_at: string
     finished_at?: string
@@ -59,7 +65,9 @@ export interface WSEvent<T = unknown> {
 export interface MatchFoundPayload {
     match_id: string
     opponent_id: string
+    opponent_username: string
     is_player_a: boolean
+    game_mode: string
 }
 
 export interface MatchOverPayload {
@@ -110,4 +118,16 @@ export interface RematchRequestPayload {
 
 export interface RematchDeclinedPayload {
   message: string
+}
+
+export interface MatchHistoryEntry {
+    match_id: string
+    opponent_id: string
+    opponent_username: string
+    result: 'win' | 'loss' | 'draw'
+    elo_delta: number
+    game_mode: string
+    is_ranked: boolean
+    word_count: number
+    finished_at: string | null
 }

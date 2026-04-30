@@ -16,6 +16,9 @@ export function ChallengeNotification() {
         setPendingRematch,
         setRematchDeclined,
         startMatch,
+        resetGame,
+        setStatus,
+        setMatchId,
     } = useGameStore();
 
     const handleChallengeAccept = async () => {
@@ -27,7 +30,6 @@ export function ChallengeNotification() {
                 const p = e.payload as MatchFoundPayload;
                 startMatch(p.match_id, false);
                 wsClient.off("match_found", onMatchFound);
-                wsClient.disconnect();
                 navigate(`/game/${p.match_id}`, {
                     state: { isPlayerA: p.is_player_a, isRanked: false },
                 });
@@ -54,25 +56,33 @@ export function ChallengeNotification() {
         if (!pendingRematch) return;
         try {
             const LOBBY_ID = "00000000-0000-0000-0000-000000000000";
-            wsClient.connect(LOBBY_ID);
+
+            // Register handler first
             const onMatchFound = (e: WSEvent) => {
                 const p = e.payload as MatchFoundPayload;
-                startMatch(p.match_id, false);
                 wsClient.off("match_found", onMatchFound);
-                wsClient.disconnect();
+                setPendingRematch(null);
+                resetGame();
+                setMatchId(p.match_id);
+                setStatus("active");
                 navigate(`/game/${p.match_id}`, {
-                    state: { isPlayerA: p.is_player_a, isRanked: false },
+                    state: { isPlayerA: p.is_player_a },
                 });
             };
             wsClient.on("match_found", onMatchFound);
+
+            // Wait for connection to be fully open BEFORE API call
+            wsClient.connect(LOBBY_ID);
+            await new Promise(r => setTimeout(r, 200)) // give socket time to open
+            // Now API call — match_found will arrive after this
             await api.respondRematch(
                 pendingRematch.match_id,
                 pendingRematch.requester_id,
                 true,
             );
-            setPendingRematch(null);
         } catch (err) {
             console.error(err);
+            wsClient.disconnect();
         }
     };
 
@@ -90,7 +100,13 @@ export function ChallengeNotification() {
         }
     };
 
-    if (!pendingChallenge && !challengeDeclined && !pendingRematch && !rematchDeclined) return null;
+    if (
+        !pendingChallenge &&
+        !challengeDeclined &&
+        !pendingRematch &&
+        !rematchDeclined
+    )
+        return null;
 
     return (
         <div className="notification">

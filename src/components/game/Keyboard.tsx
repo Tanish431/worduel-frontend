@@ -14,15 +14,19 @@ export function Keyboard({ letterStates, onKey }: KeyboardProps) {
         <div className="keyboard">
             {ROWS.map((row, i) => (
                 <div key={i} className="keyboard__row">
-                    {row.map(key => (
-                        <button
-                            key={key}
-                            className={`key ${letterStates[key] ? `key--${letterStates[key]}` : ''} ${key === 'Enter' || key === '⌫' ? 'key--wide' : ''}`}
-                            onClick={() => onKey(key === '⌫' ? 'Backspace' : key)}
-                        >
-                        {key}
-                        </button>
-                    ))}
+                    {row.map(key => {
+                        const lookupKey = key.length === 1 ? key.toLowerCase() : key
+
+                        return (
+                            <button
+                                key={key}
+                                className={`key ${letterStates[lookupKey] ? `key--${letterStates[lookupKey]}` : ''} ${key === 'Enter' || key === '⌫' ? 'key--wide' : ''}`}
+                                onClick={() => onKey(key === '⌫' ? 'Backspace' : key)}
+                            >
+                                {key}
+                            </button>
+                        )
+                    })}
                 </div>
             ))}
         </div>

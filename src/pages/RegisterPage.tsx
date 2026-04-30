@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import { api } from '../lib/api'
+import { formatErrorMessage } from '../lib/errors'
 import { useAuthStore } from '../store'
 
 export function RegisterPage() {
@@ -21,7 +22,7 @@ export function RegisterPage() {
       setAuth(user, token)
       navigate('/')
     } catch (err: any) {
-      setError(err.message)
+      setError(formatErrorMessage(err.message))
     } finally {
       setLoading(false)
     }

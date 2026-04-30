@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { formatErrorMessage } from "../lib/errors";
 import { useAuthStore } from "../store";
 
 export function GoogleAuthCallbackPage() {
@@ -17,7 +18,7 @@ export function GoogleAuthCallbackPage() {
       const token = searchParams.get("token");
 
       if (oauthError) {
-        setError(oauthError);
+        setError(formatErrorMessage(oauthError));
         return;
       }
 
@@ -33,7 +34,7 @@ export function GoogleAuthCallbackPage() {
         setError("Google sign-in did not return the required credentials.");
       } catch (err: any) {
         if (cancelled) return;
-        setError(err.message ?? "Google sign-in failed.");
+        setError(formatErrorMessage(err.message, "Google sign-in failed."));
       }
     };
 

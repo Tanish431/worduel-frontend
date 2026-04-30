@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { Guess, TileResult } from "../../types";
 
 interface TileProps {
@@ -40,11 +41,22 @@ interface GameBoardProps {
   currentInput: string
   maxGuesses: number
   wordLength: number
+  shakeTrigger: number
 }
 
-export function GameBoard({ guesses, currentInput, maxGuesses, wordLength }: GameBoardProps) {
+export function GameBoard({ guesses, currentInput, maxGuesses, wordLength, shakeTrigger }: GameBoardProps) {
+  const [isShaking, setIsShaking] = useState(false)
+
+  useEffect(() => {
+    if (!shakeTrigger) return
+
+    setIsShaking(true)
+    const timer = window.setTimeout(() => setIsShaking(false), 520)
+    return () => window.clearTimeout(timer)
+  }, [shakeTrigger])
+
   return (
-    <div className="board">
+    <div className={`board${isShaking ? " board--shake" : ""}`}>
       {Array.from({ length: maxGuesses }).map((_, i) => {
         if (i < guesses.length) return <Row key={i} guess={guesses[i]} wordLength={wordLength} />
         if (i === guesses.length) return <Row key={i} currentInput={currentInput} wordLength={wordLength} />

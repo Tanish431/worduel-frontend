@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { User, Guess, MatchStatus, TileResult, ChallengeRequestPayload, RematchRequestPayload} from '../types'
+import type { User, Guess, MatchStatus, TileResult, ChallengeRequestPayload, RematchRequestPayload } from '../types'
 
 const storedToken = localStorage.getItem('token')
 
@@ -29,10 +29,12 @@ export const useAuthStore = create<AuthSlice>((set) => ({
     }
 }))
 
-type GameStatus = MatchStatus | 'idle' | 'queuing'
+type GameStatus = MatchStatus | 'idle' | 'queuing' | 'timeout'
 
 interface GameSlice {
     matchId: string | null
+    opponentUsername: string | null
+    setOpponentUsername: (name: string) => void
     myGuesses: Guess[]
     opponentResults: TileResult[][]
     status: GameStatus
@@ -45,6 +47,7 @@ interface GameSlice {
     challengeDeclined: boolean
     pendingRematch: RematchRequestPayload | null
     rematchDeclined: boolean
+    selectedMode: 'easy' | 'hard'
     setMatchId: (id: string) => void
     startMatch: (id: string, isRanked?: boolean) => void
     addGuess: (guess: Guess) => void
@@ -60,53 +63,18 @@ interface GameSlice {
     setChallengeDeclined: (v: boolean) => void
     setPendingRematch: (r: RematchRequestPayload | null) => void
     setRematchDeclined: (v: boolean) => void
+    setSelectedMode: (mode: 'easy' | 'hard') => void
     resetGame: () => void
+    letterStates: Record<string, string>
+    updateLetterStates: (guess: string, result: TileResult[]) => void
+    resetLetterStates: () => void
 }
 
 export const useGameStore = create<GameSlice>((set) => ({
-  matchId: null,
-  myGuesses: [],
-  opponentResults: [],
-  status: 'idle',
-  winnerId: null,
-  myHP: 100,
-  opponentHP: 100,
-  opponentForfeited: false,
-  isRanked: true,
-  pendingChallenge: null,
-  challengeDeclined: false,
-  pendingRematch: null,
-  rematchDeclined: false,
-  setMatchId: (id) => set({ matchId: id }),
-  startMatch: (id, isRanked = true) => set({
-    matchId: id,
-    myGuesses: [],
-    opponentResults: [],
-    status: 'active',
-    winnerId: null,
-    myHP: 100,
-    opponentHP: 100,
-    opponentForfeited: false,
-    isRanked,
-    pendingRematch: null,
-    rematchDeclined: false,
-  }),
-  addGuess: (guess) => set((s) => ({ myGuesses: [...s.myGuesses, guess] })),
-  addOpponentResult: (result) => set((s) => ({ opponentResults: [...s.opponentResults, result] })),
-  resetMyBoard: () => set({ myGuesses: [] }),
-  resetOpponentBoard: () => set({ opponentResults: [] }),
-  setStatus: (status) => set({ status }),
-  setWinner: (id) => set({ winnerId: id, status: 'finished' }),
-  setHP: (myHP, opponentHP) => set({ myHP, opponentHP }),
-  setOpponentForfeited: (v) => set({ opponentForfeited: v }),
-  setIsRanked: (v) => set({ isRanked: v }),
-  setPendingChallenge: (c) => set({ pendingChallenge: c }),
-  setChallengeDeclined: (v) => set({ challengeDeclined: v }),
-  setPendingRematch: (r) => set({ pendingRematch: r }),
-  setRematchDeclined: (v) => set({ rematchDeclined: v }),
-  resetGame: () => set({
     matchId: null,
     myGuesses: [],
+    opponentUsername: null,
+    setOpponentUsername: (name) => set({ opponentUsername: name }),
     opponentResults: [],
     status: 'idle',
     winnerId: null,
@@ -118,5 +86,75 @@ export const useGameStore = create<GameSlice>((set) => ({
     challengeDeclined: false,
     pendingRematch: null,
     rematchDeclined: false,
-  }),
+    selectedMode: (localStorage.getItem('gameMode') as 'easy' | 'hard') ?? 'easy',
+    setMatchId: (id) => set({ matchId: id }),
+    startMatch: (id, isRanked = true) => set({
+        matchId: id,
+        myGuesses: [],
+        opponentResults: [],
+        letterStates: {},
+        status: 'active',
+        winnerId: null,
+        myHP: 100,
+        opponentHP: 100,
+        opponentForfeited: false,
+        isRanked,
+        pendingRematch: null,
+        rematchDeclined: false,
+    }),
+    addGuess: (guess) => set((s) => ({ myGuesses: [...s.myGuesses, guess] })),
+    addOpponentResult: (result) => set((s) => {
+        const isDuplicate = s.opponentResults.some(existingResult =>
+            JSON.stringify(existingResult) === JSON.stringify(result)
+        )
+        if (isDuplicate) return s
+        return { opponentResults: [...s.opponentResults, result] }
+    }),
+    resetMyBoard: () => set({ myGuesses: [], letterStates: {} }),
+    resetOpponentBoard: () => set({ opponentResults: [] }),
+    setStatus: (status) => set({ status }),
+    setWinner: (id) => set({ winnerId: id, status: 'finished' }),
+    setHP: (myHP, opponentHP) => set({ myHP, opponentHP }),
+    setOpponentForfeited: (v) => set({ opponentForfeited: v }),
+    setIsRanked: (v) => set({ isRanked: v }),
+    setPendingChallenge: (c) => set({ pendingChallenge: c }),
+    setChallengeDeclined: (v) => set({ challengeDeclined: v }),
+    setPendingRematch: (r) => set({ pendingRematch: r }),
+    setRematchDeclined: (v) => set({ rematchDeclined: v }),
+    setSelectedMode: (mode) => {
+        localStorage.setItem('gameMode', mode)
+        set({ selectedMode: mode })
+    },
+    letterStates: {},
+    resetLetterStates: () => set({ letterStates: {} }),
+    updateLetterStates: (guess, result) => set((s) => {
+        const next = { ...s.letterStates }
+        result.forEach((r, i) => {
+            const letter = guess[i]
+            if (!r) return
+            const prev = next[letter]
+            if (prev === 'correct') return
+            if (r === 'correct' || (r === 'present' && prev !== 'correct') || !prev) {
+                next[letter] = r
+            }
+        })
+        return { letterStates: next }
+    }),
+    resetGame: () => set({
+        matchId: null,
+        opponentUsername: null,
+        myGuesses: [],
+        opponentResults: [],
+        status: 'idle',
+        winnerId: null,
+        myHP: 100,
+        opponentHP: 100,
+        opponentForfeited: false,
+        isRanked: true,
+        pendingChallenge: null,
+        challengeDeclined: false,
+        pendingRematch: null,
+        rematchDeclined: false,
+        letterStates: {},
+    }),
 }))
