@@ -23,22 +23,39 @@ export function ChallengeNotification() {
 
     const handleChallengeAccept = async () => {
         if (!pendingChallenge) return;
-        try {
-            const LOBBY_ID = "00000000-0000-0000-0000-000000000000";
-            wsClient.connect(LOBBY_ID);
-            const onMatchFound = (e: WSEvent) => {
-                const p = e.payload as MatchFoundPayload;
-                startMatch(p.match_id, false);
-                wsClient.off("match_found", onMatchFound);
-                navigate(`/game/${p.match_id}`, {
-                    state: { isPlayerA: p.is_player_a, isRanked: false },
-                });
-            };
-            wsClient.on("match_found", onMatchFound);
-            await api.respondChallenge(pendingChallenge.challenger_id, true);
+        const LOBBY_ID = "00000000-0000-0000-0000-000000000000";
+        let resolved = false;
+        const onMatchFound = (e: WSEvent) => {
+            if (resolved) return;
+            resolved = true;
+            const p = e.payload as MatchFoundPayload;
             setPendingChallenge(null);
+            startMatch(p.match_id, false);
+            wsClient.off("match_found", onMatchFound);
+            navigate(`/game/${p.match_id}`, {
+                state: { isPlayerA: p.is_player_a, isRanked: false },
+            });
+        };
+
+        try {
+            wsClient.on("match_found", onMatchFound);
+
+            wsClient.connect(LOBBY_ID);
+            await new Promise((r) => setTimeout(r, 200));
+
+            const res = await api.respondChallenge(pendingChallenge.challenger_id, true);
+            if (!resolved && res.match_id) {
+                resolved = true;
+                startMatch(res.match_id, false);
+                wsClient.off("match_found", onMatchFound);
+                setPendingChallenge(null);
+                navigate(`/game/${res.match_id}`, {
+                    state: { isPlayerA: false, isRanked: false },
+                });
+            }
         } catch (err) {
             console.error(err);
+            wsClient.off("match_found", onMatchFound);
         }
     };
 

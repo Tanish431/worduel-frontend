@@ -16,7 +16,7 @@ type Tab = "create" | "join" | "challenge";
 
 export function PrivateMatchModal({ onClose }: Props) {
     const navigate = useNavigate();
-    const { startMatch, challengeDeclined, setChallengeDeclined } =
+    const { startMatch, challengeDeclined, setChallengeDeclined, selectedMode } =
         useGameStore();
     const [tab, setTab] = useState<Tab>("create");
     const [code, setCode] = useState("");
@@ -70,7 +70,7 @@ export function PrivateMatchModal({ onClose }: Props) {
         setError(null);
         try {
             listenForMatch();
-            await api.joinRoom(joinCode.toUpperCase());
+            await api.joinRoom(joinCode.toUpperCase(), selectedMode);
         } catch (err: any) {
             setError(formatErrorMessage(err.message));
             wsClient.disconnect();

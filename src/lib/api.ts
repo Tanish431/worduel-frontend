@@ -28,8 +28,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     })
     if (!res.ok) {
         try {
-            const json = await res.json()
-            throw new Error(formatErrorMessage(json.error ?? res.statusText))
+            const text = await res.text()
+            const json = text ? JSON.parse(text) : null
+            throw new Error(formatErrorMessage(json?.error ?? res.statusText))
         } catch (e) {
             if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
                 throw e
@@ -38,7 +39,17 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
         }
 
     }
-    return res.json()
+
+    if (res.status === 204 || res.headers.get('content-length') === '0') {
+        return undefined as T
+    }
+
+    const text = await res.text()
+    if (!text) {
+        return undefined as T
+    }
+
+    return JSON.parse(text) as T
 }
 
 export const api = {
@@ -136,8 +147,11 @@ export const api = {
     createRoom: () =>
         request<{ code: string }>('/room', { method: 'POST' }),
 
-    joinRoom: (code: string) =>
-        request<{ match_id: string }>(`/room/${code}/join`, { method: 'POST' }),
+    joinRoom: (code: string, gameMode: 'easy' | 'hard') =>
+        request<{ match_id: string }>(`/room/${code}/join`, {
+            method: 'POST',
+            body: JSON.stringify({ game_mode: gameMode }),
+        }),
 
     // Challenge
     challengeUser: (username: string) =>

@@ -233,45 +233,43 @@ export function MatchResultOverlay({
                 </div>
                 {!isHistoryView && (
                     <div className="result-overlay__actions">
-                        <div className="result-overlay__actions">
-                            {isRanked ? (
-                                challengeSent ? (
-                                    <p className="result-overlay__waiting">
-                                        Waiting for challenge…
-                                    </p>
-                                ) : (
-                                    <button
-                                        className="btn btn--primary btn--sm"
-                                        onClick={() =>
-                                            setShowChallengeModal(true)
-                                        }
-                                    >
-                                        Challenge
-                                    </button>
-                                )
+                        {isRanked ? (
+                            challengeSent ? (
+                                <p className="result-overlay__waiting">
+                                    Waiting for challenge…
+                                </p>
                             ) : (
                                 <button
                                     className="btn btn--primary btn--sm"
-                                    onClick={onRematch}
-                                    disabled={rematchSent}
+                                    onClick={() =>
+                                        setShowChallengeModal(true)
+                                    }
                                 >
-                                    {rematchSent
-                                        ? "Waiting for rematch…"
-                                        : "Rematch"}
+                                    Challenge
                                 </button>
-                            )}
-                            {isRanked && rematchSent && (
-                                <p className="result-overlay__waiting">
-                                    Waiting for rematch…
-                                </p>
-                            )}
+                            )
+                        ) : (
                             <button
-                                className="btn btn--ghost btn--sm"
-                                onClick={onBackToLobby}
+                                className="btn btn--primary btn--sm"
+                                onClick={onRematch}
+                                disabled={rematchSent}
                             >
-                                Back to lobby
+                                {rematchSent
+                                    ? "Waiting for rematch…"
+                                    : "Rematch"}
                             </button>
-                        </div>
+                        )}
+                        {isRanked && rematchSent && (
+                            <p className="result-overlay__waiting">
+                                Waiting for rematch…
+                            </p>
+                        )}
+                        <button
+                            className="btn btn--ghost btn--sm"
+                            onClick={onBackToLobby}
+                        >
+                            Back to lobby
+                        </button>
                     </div>
                 )}
 
